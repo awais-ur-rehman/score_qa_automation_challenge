@@ -1,62 +1,87 @@
 package test.mobile.score_qa_automation_challenge.base;
 
-import io.appium.java_client.AppiumDriver;
-import test.mobile.score_qa_automation_challenge.utilities.DeviceUtils;
-import test.mobile.score_qa_automation_challenge.utilities.PropertiesUtils;
-
 import java.io.IOException;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.appium.java_client.AppiumDriver;
+import test.mobile.score_qa_automation_challenge.utilities.CommandRunner;
+import test.mobile.score_qa_automation_challenge.utilities.DeviceUtils;
+import test.mobile.score_qa_automation_challenge.utilities.PropertiesUtils;
+
+/**
+ * @author gurchet.singh
+ * @since 15 March 2023
+ * @description This file is responsible to create and
+ *        maintain the AppiumDriver
+ */
+
 public class DriverManager {
 	private static final Logger logger = Logger.getLogger(DriverManager.class.getName());
-	private static final Map<Long, AppiumDriver> drivers = new ConcurrentHashMap<>();
+	private static HashMap<Long, HashMap<String,Object>> drivers = new HashMap<Long, HashMap<String,Object>>();
 
 	public static AppiumDriver getAppiumDriver() {
-		Long threadId = Thread.currentThread().getId();
 
-		if (drivers.containsKey(threadId)) {
-			return drivers.get(threadId);
+		Long desiredKey = Thread.currentThread().getId();
+		for (Entry<Long, HashMap<String,Object>> entry : drivers.entrySet()) {
+			if (desiredKey == entry.getKey()) {
+				AppiumDriver driver = (AppiumDriver) entry.getValue().get("driver");
+				Map<String, Object> status = driver.getStatus();
+				String pageSource = driver.getPageSource();
+				if(!Objects.isNull(driver) && !Objects.isNull(driver.getStatus()) && !driver.getPageSource().isEmpty())
+					return (AppiumDriver) entry.getValue().get("driver");
+				else{
+					drivers.remove(desiredKey);
+				}
+			}
 		}
 
 		Device device = DeviceManager.getDevice();
-		if (device == null) {
+		if(Objects.isNull(device)){
 			logger.log(Level.SEVERE, "No device found");
-			throw new IllegalStateException("Driver initialization failed. No device found.");
+			return null;
 		}
 
-		try {
-			if ("true".equalsIgnoreCase(PropertiesUtils.get("install_app"))) {
+		if(PropertiesUtils.get("install_app").equalsIgnoreCase("true")){
+			try {
 				DeviceUtils.installAppOnDevice(device.getName(), PropertiesUtils.get("app_path"));
+			} catch (IOException e) {
+				throw new RuntimeException(e);
 			}
-
-			URL url = "true".equals(PropertiesUtils.get("appium_auto_run"))
-					? AppiumService.getAppiumServerUrl()
-					: new URL("http://" + PropertiesUtils.get("appium_host") + ":" + PropertiesUtils.get("appium_port_number") + PropertiesUtils.get("appium_path"));
-
-			AppiumDriver driver = new AppiumDriver(url, device.getCapabilities());
-			drivers.put(threadId, driver);
-			logger.log(Level.INFO, "Driver initialization is successful");
-			return driver;
-		} catch (IOException e) {
-			logger.log(Level.SEVERE, "Error installing the app on device", e);
-			throw new RuntimeException("Error installing the app on device", e);
-		} catch (Exception e) {
-			logger.log(Level.SEVERE, "Driver initialization failed", e);
-			throw new IllegalStateException("Driver initialization failed", e);
 		}
+
+		AppiumDriver driver = null;
+		try {
+			URL url = null;
+			if(PropertiesUtils.get("appium_auto_run").equals("true"))
+				url = AppiumService.getAppiumServerUrl();
+			else
+				url = new URL("http://"+ PropertiesUtils.get("appium_host") + ":" +PropertiesUtils.get("appium_port_number") + PropertiesUtils.get("appium_path"));
+			driver = new AppiumDriver(url, device.getCapabilities());
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+		HashMap<String,Object> driverMap = new HashMap<String,Object>();
+		driverMap.put("device",device);
+		driverMap.put("driver",driver);
+
+		// using the current thread id to tie the drivers with the test scenario threads
+		drivers.put(Thread.currentThread().getId(), driverMap);
+		logger.log(Level.INFO, "Driver initialization is successful");
+		return driver;
 	}
 
-	public static void quitCurrentDriver() {
-		Long threadId = Thread.currentThread().getId();
-		AppiumDriver driver = drivers.get(threadId);
-		if (driver != null) {
-			driver.quit();
-			drivers.remove(threadId);
-			logger.log(Level.INFO, "Driver " + threadId + " got quit");
-		}
+	public static void quitCurrentDriver(){
+		Long desiredKey = Thread.currentThread().getId();
+		getAppiumDriver().quit();
+		drivers.remove(desiredKey);
+		logger.log(Level.INFO, "Driver "+desiredKey+" got quit");
 	}
 }

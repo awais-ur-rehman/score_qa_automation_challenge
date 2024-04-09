@@ -13,16 +13,9 @@ import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
-import static io.appium.java_client.service.local.flags.GeneralServerFlag.LOG_LEVEL;
-import static io.appium.java_client.service.local.flags.GeneralServerFlag.SESSION_OVERRIDE;
-import static io.appium.java_client.service.local.flags.GeneralServerFlag.BASEPATH;
 
+import static io.appium.java_client.service.local.flags.GeneralServerFlag.*;
 
-/**
- * @author gurchet.singh
- * @description This Class is created to handle Appium service. ie auto start, auto stop appium service
- * @since 18 March 2023
- */
 
 public class AppiumService {
     public static int portNumber = 4723;

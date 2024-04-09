@@ -1,6 +1,6 @@
 [
 	{
-		"platformName": "Android",
+		"platformName": "ANDROID",
 		"deviceName": "sdk_gphone_arm64",
 		"automationName": "uiAutomator2",
 		"osVersion": "11.0 (R) - API 30",
