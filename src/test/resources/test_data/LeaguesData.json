@@ -1,0 +1,20 @@
+{
+  "NHL": {
+    "name":"NHL Hockey",
+    "teams": {
+      "BOS": "Boston Bruins",
+      "BUF": "Buffalo Sabres",
+      "MTL": "Montreal Canadiens",
+      "OTT": "Ottawa Senators"
+    }
+  },
+  "NFL": {
+    "name":"NFL Football",
+    "teams": {
+      "BUF": "Buffalo Bills",
+      "MIA": "Miami Dolphins",
+      "NE": "New England Patriots",
+      "NYJ": "New York Jets"
+  }
+}
+}
